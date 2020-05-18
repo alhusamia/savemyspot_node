@@ -60,6 +60,15 @@ io.on("connection", function (socket) {
       })
       .catch((err) => console.error(err));
   });
+  socket.on("leave q", function (data) {
+    axios
+      .delete("http://127.0.0.1:8000/queue/delete/" + data.id + "/")
+      .then((res) => res.data)
+      .then((restaurant) => {
+        io.in(restaurant.id).emit("update queue");
+      })
+      .catch((err) => console.error(err));
+  });
 });
 
 http.listen(3000, function () {
