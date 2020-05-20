@@ -7,6 +7,17 @@ const instance = axios.create({
   baseURL: "http://127.0.0.1:8000/",
 });
 
+function getMyQ(socket, restaurantID) {
+  axios
+    .get(`http://127.0.0.1:8000/restaurant/detail/${restaurantID}/`)
+    .then((res) => res.data)
+    .then((restaurant) => {
+      socket.join(restaurant.id);
+      io.to(socket.id).emit("restaurantQ", restaurant);
+    })
+    .catch((err) => console.error(err));
+}
+
 function getRestaurantQ(socket, restaurantID, user) {
   instance
     .get(`queue/list/`, { data: { restaurant: restaurantID } })
@@ -62,12 +73,16 @@ io.on("connection", function (socket) {
   });
   socket.on("leave q", function (data) {
     axios
-      .delete("http://127.0.0.1:8000/queue/delete/" + data.id + "/")
+      .delete("http://127.0.0.1:8000/queue/delete/" + data + "/")
       .then((res) => res.data)
       .then((restaurant) => {
         io.in(restaurant.id).emit("update queue");
+        io.in(restaurant.id).emit("restaurantQ", restaurant.queues);
       })
       .catch((err) => console.error(err));
+  });
+  socket.on("restaurant request", (data) => {
+    getMyQ(socket, data);
   });
 });
 
